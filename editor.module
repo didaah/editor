@@ -1,0 +1,470 @@
+<?php
+// $Id$
+
+/**
+ * @Implement of hook_menu()
+ */
+function editor_menu() {
+
+  $items = array();
+
+  $items['editor/upload/%'] = array(
+    'load_functions' => array(2 => '%'),
+    'access_arguments' => array('file upload'),
+    'page_callback' => 'editor_page_upload',
+    'page_arguments' => array(2),
+    'file' => 'editor.page.inc',
+  );
+
+  $items['editor/swfupload'] = array(
+    'access_arguments' => array('file upload'),
+    'page_callback' => 'editor_page_swfupload',
+    'file' => 'editor.page.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * @Implement of hook_editor_info()
+ *  定义编辑器，模块可使用本接口定义不同的编辑器实例。
+ */
+function editor_editor_info() {
+  $editor = array();
+
+  $editor['front_default'] = array(
+    /**
+     * 编辑器实例系统名称为 front_default，name 值为可读名称。
+     *  注意，实例系统名称全站唯一，若与其它模块相同，将根据模块加载先后顺序覆盖。
+     *  因此，尽量为实例使用前缀，如使用模块系统名称为前缀。
+     *  管理员在后台添加的实例均统一前缀为：editor_ 请其它模块在定义时尽量避免使用此前缀
+     * 该编辑器配置将应用于 admin/front 页面的首页默认内容表单
+     */
+    'name' => '默认首页内容', // 编辑器配置可读名称，名称将缓存到数据库，不需要使用 t() 进行多语言
+    'status' => 1, // 实例状态，1、启用，0、不启用
+    /**
+     * 编辑器详细配置
+     */
+    'data' => array(
+      // 'name' => 'ckeditor', // 指定编辑器，如：ckeditor、ueditor。通常不需要指定，由管理员自行设置
+      'dom' => 'system_admin_front_type_value', // 作用的文本域 id，如：#body、#mytextarea 等，必须
+      /**
+       * 允许加载编辑器的页面。留空则将在所有页面寻找匹配的 dom 元素。
+       * 必须是系统路径，如：admin user/login user/center 等，多个路径以 ; 号分隔
+       * 若以斜杠(/)开始，将视作正则模式，如：/^admin\/.*?\/node/i
+       * 该设置管理员可在后台更改
+       */
+      'path' => 'admin/front',
+
+      //'access' => array( // 权限设置，留空则所有可使用，管理员可在后台更改
+      //  'rids' => array(), // 允许使用该编辑器的角色组 id
+      //  'uids' => array(), // 允许使用该编辑器的用户 id
+      //),
+
+      /**
+       * 编辑器所作用于的表单系统 id，该值通常是定义表单的函数名称
+       * 可以为空，但指定该值，便于将通过编辑器上传的文件和 form_token 关联，进而与依附对象（如文章）关联
+       * 当指定了该值， $GLOBALS['form_tokens'][$form_id] 必须存在，才会加载编辑器，以避免在不必要的页面加载多余 js
+       */
+      'form_id' => 'system_admin_front',
+
+      /**
+       * 编辑器所作用于的字段系统名称，比如：title、name，可以为空
+       */
+      'form_field_name' => 'value',
+
+      /**
+       * 文件上传设置，用于处理通过编辑器上传的文件
+       * 可设置的参数与表单 file 字段，如：
+       * array(
+       *  '#disabled_upload' => false, // true：禁止从编辑器上传，默认 false：允许。
+       *  '#disabled_view' => false, // true：禁止在编辑器中浏览已上传文件，默认 false：允许。
+       *  '#view_url' => '', // 在编辑器中浏览本地文件以便插入，若留空，则使用默认：editor/view。除非有特别需求，建议留空
+       *
+       *  // 浏览本地文件时的过滤条件，有时候可能并不需要将所有已上传文件展示，可在此设置过滤条件，条件必须是 files 表中的字段
+       *  '#view_args' => array(
+       *    'ext_type' => '',
+       *    'ext_id' => 1,
+       *  ),
+       *
+       *  '#upload_url' => '', // 处理上传文件的路径，若留空，则使用默认： editor/upload。除非有特别需求，建议留空
+       *
+       *  // 用于验证和保存上传文件参数，如设置了 #upload_url 参数，则以下设置无效。以下设置均为可选
+       *  '#validate' => array(
+       *   'savepath' => '',// 存储路径，留空则使用默认路径。
+       *   //'no_insert' => true, // 为 true 则文件信息不写入数据库
+       *   //'title' => '', // 文件名或标题，不大于 255 字符
+       *   //'filename' => '', // 路径中的文件名，可包含扩展名，若不指定，则使用 $_FILES['name']
+       *   //'extension' => '', // 也可单独指定扩展名
+       *   'ext_id' => 0, // 扩展 Id
+       *   'ext_id2' => 0, // 扩展 Id
+       *   // 扩展类型。假如是发布一篇文章，在文章发布前并不知道文章 id，此时通过编辑器上传的文件无法关联
+       *   // 因此，针对这种情况，请不要设置 ext_type 参数，系统将自动把上传的文件 ext_type 设置为 form_token
+       *   // 表单的 form_token 是唯一的，当文章保存成功后，以 ext_type 为条件，可完成关联
+       *   // 可参见 comment 模块
+       *   'ext_type' => '',
+       *   'status' => 1, // 文件状态，默认为 1，即正常，通常可能需要设置为 0，在文章保存成功后，再以 form_token 为条件修改状态
+       *   'image' => array( // 设置了该参数后，将只允许上传图片
+       *     'type' => array('jpg', 'png', 'gif'),
+       *     'size' => '200x300',
+       *   ),
+       *   //'filetype' => array('jpg', 'zip'),// 设置允许上传的图片类型，优先级低于 image 参数
+       *   'filesize' => '300',// 允许的最大文件
+       *   'usersize' => true, // 验证用户上传文件总大小
+       *
+       *   // 不支持的参数，请不要设置该参数，可能导致意外
+       *   'call_function' => '',
+       *  )
+       * ),
+       */
+      'files' => array(
+        '#validate' => array(
+          'status' => 1,
+          'savepath' => 'front_default',
+          'ext_type' => 'front_default'
+        )
+      ),
+      /**
+       * 编辑器配置参数，不同编辑器可能定义的参数不一样
+       */
+      'config' => array(
+        /**
+         * 编辑器工具栏，各编辑器均预设四种类型：full、medium、small、mini。
+         * 也可传递数组，自行设置，如：array('Blod', 'Copy')，各编辑器按钮名称可能各异
+         */
+        'toolbar' => 'full', // 编辑器工具栏，各编辑器均预设四种类型：full、medium、small、mini。也可传递数组，自行设置，如：array()
+      ),
+    ),
+  );
+
+  return $editor;
+}
+
+/**
+ * @Implement of hook_editor_is_editor()
+ */
+function editor_editor_load_editor($edit) {
+
+}
+
+// public editor_get_editor(array $v) {{{ 
+/**
+ * editor_get_editor
+ *  编辑器实例化
+ * @param array $v 
+ *  编辑器实例配置，参数示例：
+ *  array(
+ *    'dom' => '', // textarea 文本域 id，必需
+ *    // 其它参数见 editor_editor_info() 中的 data 值
+ *  )
+ * @access public
+ * @return void
+ */
+function editor_get_editor(array $v) {
+  if (empty($v['name'])) $v['name'] = var_get('editor_default', 'ckeditor');
+
+  $file = DIDA_ROOT . '/' . dd_get_path('module', 'editor') . '/editor/' . $v['name'] . '/include.inc';
+
+  // 指定的编辑器不存在
+  if (!is_file($file)) {
+    dd_set_message(t('editor', '编辑器 !name 不存在', array('!name' => $v['name'])), 'error');
+    return false;
+  }
+
+  require_once $file;
+  
+  static $loaded;
+  
+  if (empty($v['config']['toolbar'])) {
+    $v['config']['toolbar'] = 'full'; // 默认工具栏为 full
+  }
+
+  // 若为数组，则是自定义工具栏，反之则为预设
+  if (!is_array($v['config']['toolbar'])) {
+    $v['config']['toolbar'] = ':::code:::Dida.editor.toolbar.' . $v['name'] . '.full';
+  } 
+
+  if (!empty($v['files'])) {
+    if (!empty($v['files']['#disabled_upload'])) {
+    }
+  }
+
+  $config = array(
+    'upload_image' => url('editor/upload/' . $v['name'], array(
+      'query' => '?type=image&form_token=' . $v['form_token'] . '&instances=' . $v['instances']
+    )),
+    'upload_file' => url('editor/upload/' . $v['name'], array(
+      'query' => '?type=file&form_token=' . $v['form_token'] . '&instances=' . $v['instances']
+    )),
+  );
+
+  $v['config'] = array_merge($config, $v['config']);
+
+  $edit = new $v['name']($v['dom'], $v['config']);
+
+  if (!isset($loaded[$v['name']])) {
+    $loaded[$v['name']] = 1;
+
+    // 初始化，通常用于加载公用 js、css 文件
+    $edit->init();
+
+    // 加载预设工具栏按钮
+    dd_add_js('Dida.editor.toolbar.' . $v['name'] . ' = ' . dd_to_js($edit->toolbar()) . ';', 'inline_nojq');
+  }
+
+  // 加载编辑器
+  $edit->load();
+
+}
+// }}}
+
+/**
+ * 编辑器接口
+ */
+Class EDITOR {
+  
+  public $path; // editor 模块路径
+
+  public $dom; // 应用编辑器的 textarea id
+
+  public $config; // 编辑器配置参数
+
+  public function __construct($dom, $config) {
+    $this->dom = $dom;
+    $this->config = $config;
+    $this->path = dd_get_path('module', 'editor');
+  }
+
+  // 初始化，通常载入公用 js、css 等
+  public function init() {}
+    
+  // 加载编辑器
+  public function load() {}
+
+  // 文件上传处理
+  public function upload($file, $validate) {}
+
+  // 文件管理
+  public function files() {}
+
+  // 定义编辑器按钮栏，各编辑器必需预设四种工具栏
+  static function toolbar() {
+    return array('full' => array(), 'medium' => array(), 'small' => array(), 'mini' => array());
+  }
+}
+
+/**
+ * @Implement of hook_exit()
+ */
+function editor_exit() {
+  global $form_tokens;
+  
+  if (!$editor = editor_get_instances()) return;
+
+  dd_add_js(dd_get_path('module', 'editor') . '/editor.js');
+
+  foreach ($editor as $type => $v) {
+    // 如指定了 form_id，但却没有 form_token 值，跳过
+    if (!empty($v['form_id']) && empty($form_tokens[$v['form_id']])) continue;
+
+    // 检查显示路径设置
+    if (!empty($v['path']) && !block_path_display(1, $v['path'])) continue;
+
+    $v['form_token'] = $form_tokens[$v['form_id']];
+
+    editor_get_editor($v);
+  }
+}
+
+// public editor_get_instances() {{{ 
+/**
+ * editor_get_instances
+ * 获取所有已启用的编辑器配置
+ * @param string $name
+ *  按指定实例名称获取，若未指定，则获取全部
+ * @access public
+ * @return array
+ */
+function editor_get_instances($name = NULL) {
+     // 将所有模块定义的实例写入数据库
+    editor_set_data();
+
+    if ($fetch = db_query('SELECT type, data FROM {editor} WHERE status = 1')) {
+      foreach ($fetch as $o) {
+        $o->data = unserialize($o->data);
+        if (empty($o->data['dom'])) continue;
+        $o->data['instances'] = $o->type; // 实例系统名称
+        $data[$o->type] = $o->data;
+      }
+    }
+return $name ? $data[$name] : $data; 
+  if (!$data = var_get('editor_instances')) {
+    // 将所有模块定义的实例写入数据库
+    editor_set_data();
+
+    if ($fetch = db_query('SELECT type, data FROM {editor} WHERE status = 1')) {
+      foreach ($fetch as $o) {
+        $o->data = unserialize($o->data);
+        if (empty($o->data['dom'])) continue;
+        $o->data['instances'] = $o->type; // 实例系统名称
+        $data[$o->type] = $o->data;
+      }
+    }
+    var_set('editor_instances', $data);
+  }
+
+  return $data;
+}
+// }}}
+
+// public editor_set_data() {{{ 
+/**
+ * editor_set_data
+ * 将通过 hook_editor_info() 定义的编辑器实例写入 editor 表。
+ * 注意，若 type 相同，则不写入。管理员在后台添加的实例均统一前缀为：editor_ 请模块定义时尽量避免使用此前缀
+ * @access public
+ * @return void
+ */
+function editor_set_data() {
+  // 读取已有的编辑器实例
+  $datas = array();
+  if ($fetch = db_query('SELECT type FROM {editor}')) {
+    foreach ($fetch as $o) {
+      $datas[$o->type] = 1;
+    }
+  }
+  
+  $data = module_invoke_all('editor_info');
+  foreach ($data as $type => $editor) {
+    // 若不存在才写入
+    if (empty($datas[$type])) {
+      $editor['type'] = $type;
+      $editor['created'] = time();
+      db_write_record('editor', $editor);
+    }
+  }
+
+}
+// }}}
+
+/**编辑器常用功能**/
+
+/**
+ * 获取 swfupload 批量上传所需的 js、html 等内容
+ * @param string $dom
+ *  html 元素 id，如：mydom，不指定将由自动分配
+ * @param array $v
+ *  配置参数，示例：
+ *    array(
+ *      'upload_url' => '', // 处理上传文件的路径，若不设置，则使用默认 editor/swfupload
+ *      // 文件上传设置，与表单 file 字段 #validate 参数相同，将随文件以 post 方式发送到上传路径
+ *      'validate' => array(
+ *        'savepath' => '',
+ *      ),
+ *      // swfupload 配置参数，接口将默认设置这些参数，如想自定义，请在此设置
+ *      'swfupload' => array(
+ *        'file_size_limit' => '100 MB',
+ *      ),
+ *      // 自定义文字
+ *      'text' => array(
+ *      ),
+ *    );
+ * @param $html
+ *  是否返回 html 代码，若不需要，则必须自行输出 html 内容
+ * @returu 若 $html 为真，返回 swfupload 所需的 html 内容
+ */
+function editor_get_swfupload($v = array(), $dom = '', $html = 1) {
+  static $i = 0;
+
+  if (empty($dom)) $dom = 'dida_editor_swfupload_wrapper_' . $i;
+
+  $path = dd_get_path('module', 'editor');
+  
+  $text = array(
+    'list' => t('editor', '文件队列'),
+    'stop' => t('editor', '暂停上传'),
+    'start' => t('editor', '开始上传'),
+    'description' => t('editor', '选择文件'),
+  );
+  
+  if (!empty($v['text'])) $text = array_merge($text, $v['text']);
+	
+	$args = array(
+    'upload_url' => url('editor/swfupload', array('query' => 'name=Filedata')),
+		'flash_url' => f($path . '/swfupload/swfupload.swf'),
+		'post_params' => array(
+      '__SETPHPSESSID' => $GLOBALS['user']->session,
+      '__SETUID' => $GLOBALS['user']->uid,
+      'validate' => !empty($v['validate']) ? dd_encrypt(serialize($v['validate'])) : ''
+    ),
+		'file_size_limit' => '16 MB',
+		'file_types' => '*.jpg;*.gif;*.png',
+		'file_types_description' => $text['description'],
+		'file_upload_limit' => 100,
+		'file_queue_limit' => '0',
+		'custom_settings' => array(
+			'wrapper' => '#' . $dom,
+			'fileLists' => '#dida_editor_swfupload_files_' . $i
+		),
+    'minimum_flash_version' => '9.0.28',
+		'debug' => false,
+    'button_image_url' => f($path . '/swfupload/button.png'),
+		'button_width' => 70,
+		'button_height' => 27,
+		'button_placeholder_id' => 'dida_editor_swfupload_select_button_' . $i,
+    'button_placeholder' => '$(\'#dida_editor_swfupload_select_button_' . $i .'\')[0]',
+    'swfupload_loaded_handler' => 'Dida.swfupload.swfLoaded',
+    'file_dialog_start_handler' => 'Dida.swfupload.dialogStart',
+		'file_queued_handler' => 'Dida.swfupload.fileQueued',
+		'file_queue_error_handler' => 'Dida.swfupload.fileQueueError',
+    'file_dialog_complete_handler' => 'Dida.swfupload.dialogComplete',
+		'upload_start_handler' => 'Dida.swfupload.uploadStart', 
+		'upload_progress_handler' => 'Dida.swfupload.uploadProgress',
+		'upload_error_handler' => 'Dida.swfupload.uploadError',
+		'upload_success_handler' => 'Dida.swfupload.uploadSuccess',
+    'upload_complete_handler' => 'Dida.swfupload.uploadComplete',
+	);
+	
+  if (!empty($v['swfupload'])) {
+    $args = array_merge($args, $v['swfupload']);
+  }
+  
+  dd_add_css($path . '/swfupload/swfupload.css');
+
+  dd_add_js($path . '/swfupload/swfupload.js');
+
+  dd_add_js($path . '/swfupload/editor.swfupload.js');
+  
+  dd_add_js('$(\'#' . $dom . '\').swfupload(' . dd_to_js($args) . ')', 'inline', false, 'footer');
+  
+  $i++;
+
+  if (empty($html)) return;
+
+  $output = '<div id="'.$dom.'" class="dida_editor_swfupload_content dida_editor_swfupload_content">';
+
+  if (empty($v['no_lists'])) {
+    $output .= '<fieldset id="' . substr($args['custom_settings']['fileLists'], 1) . '" class="collapsible dida_editor_swfupload_fieldset">';
+    if (empty($v['no_lists_text'])) {
+      $output .= '<legend class="collapse-processed asc"><a href="#">' . $text['list'] . '</a></legend>';
+    }
+  }
+
+  $output .= '</fieldset><div class="dida_editor_swfupload_button">';
+
+  $output .= '<span id="' . $args['button_placeholder_id'] . '"></span>';
+  
+  if (empty($v['no_stop'])) {
+    $output .= '<input type="button" class="dida_editor_swfupload_stop_upload" value="' . $text['stop'] . '" />';
+  }
+
+  if (empty($v['no_start'])) {
+    $output .= '<input type="button" class="dida_editor_swfupload_start_upload" value="' . $text['start'] . '" />';
+  }
+  
+  $output .= '</div></div>';
+
+  return $output;
+}
+
+

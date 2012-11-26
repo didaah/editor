@@ -1,0 +1,83 @@
+<?php
+// $Id$
+
+/**
+ * @Implement of hook_schema()
+ */
+function editor_schema() {
+  $schema['editor'] = array(
+    'description' => '编辑器配置',
+    'fields' => array(
+      'type' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => '配置的系统名称，不允许重复', 
+      ),
+      'name' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => '编辑器配置名称',
+      ),
+      'data' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'size' => 'medium',
+        'serialize' => true,
+        'description' => '配置数据'
+      ),
+      'deleted' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'tiny',
+        'description' => '删除，0：允许，1、不允许。通过 hook_editor_info() 创建的不允许删除',
+      ),
+      'status' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'tiny',
+        'description' => '0：不启用，1、启用',
+      ),
+      'created' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => '添加时间',
+      ),
+    ),
+    'indexes' => array(
+      'created' => array('created'),
+      'status' => array('status'),
+    ),
+    'primary key' => array('type'),
+  );
+  return $schema;
+}
+
+/**
+ * @Implement of hook_install()
+ */
+function editor_install() {
+  $ret = array();
+  $ret = module_install_schema('install', 'editor');
+  return $ret;
+}
+
+/**
+ * @Implement of hook_uninstall()
+ */
+function editor_uninstall() {
+  $ret = array();
+  $ret = module_install_schema('uninstall', 'editor');
+  
+  db_exec('DELETE FROM {variable} WHERE name LIKE ?', array('editor_%'));
+  var_init();
+  
+  return $ret;
+}

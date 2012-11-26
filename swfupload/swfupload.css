@@ -1,0 +1,112 @@
+.dida_editor_swfupload_button {
+  text-align: right;
+}
+
+.dida_editor_swfupload_button * {
+	height: 29px;
+	width: 70px;
+	margin: 0 2px;
+}
+
+.dida_editor_swfupload_button input {
+	height: 29px;
+	padding: 0 8px;
+	float: right;
+	cursor: pointer;
+}
+
+.dida_swfupload_files_table tr,
+.dida_swfupload_files_table td {
+  text-align: center;
+}
+
+.dida_swfupload_files_table {
+  overflow: auto;
+  max-height: 260px;
+}
+
+.dida_swfupload_status {
+  border-top: 1px solid #ccc;
+  border-bottom: 1px solid #ccc;
+  padding: 5px 0;
+  margin: 10px 0;
+  text-align: center;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.dida_swfupload_file_name {
+  max-width: 260px;
+}
+
+.dida_swfupload_file_name p {
+  margin: 3px 0;
+  padding: 0;
+}
+
+.dida_swfupload_file_name input {
+  width: 90%;
+  text-align: center;
+}
+
+.dida_swfupload_file_body textarea {
+  height: 60px;
+  width: 95%;
+  margin: 0;
+}
+
+.dida_swfupload_error_msg, .dida_swfupload_num {
+	color: #f00;
+}
+
+tr.dida_swfupload_file_list_cancel {
+	background: #E3E3E3;
+}
+
+tr.dida_swfuploaad_upload_error {
+	background: #CB4B46;
+}
+
+tr.dida_swfupload_uploading {
+	background: #0D465A;
+  color: #FFF;
+}
+
+tr.dida_swfupload_uploading a {
+  color: #FFF;
+}
+
+tr.dida_swfupload_upload_ok {
+	background: #F7F79B;
+}
+
+/*uploading*/
+.dida_swfupload_loading_mark {
+	background: #1C58D6;
+	height: 5px;
+	line-height:5px;
+	*font-size:0px;
+	padding: 0;
+	margin:0;
+	width: 0;
+}
+
+.dida_swfupload_loading_percentage {
+	color: #f00;
+	padding: 0 8px;
+}
+
+.dida_swfupload_loading_bytes {
+	color: #BCA012;
+}
+
+.dida_swfupload_loading_total {
+	color: #4B4003;
+}
+
+.dida_swfupload_loading {
+	text-align: center;
+	padding: 5px 12px;
+	border-bottom: 1px solid #0055EA;
+	display: none;
+}
