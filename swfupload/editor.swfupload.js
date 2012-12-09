@@ -1,6 +1,11 @@
 // $Id$
 
-Dida.swfupload = {endFile: {}, stopUpload: {}, loaded: {}};
+Dida.swfupload = {
+  endFile: {}, // 实例中所选取的最后一个文件
+  stopUpload: {}, // 实例状态，启动或停止
+  loaded: {}, // 实例初始化状态
+  uploaded: {} // 已上传成功的文件数据，该数据为服务端所返回
+};
 
 (function($) {
 
@@ -63,7 +68,7 @@ Dida.swfupload = {endFile: {}, stopUpload: {}, loaded: {}};
 	  var self = SWFUpload.instances[movieName];
 	  self.cancelUpload(fileID, false);
 	  var d = '#' + fileID;
-	  $(d + ' .dida_swfupload_file_status_queued').text('已取消');
+	  $(d + ' .dida_swfupload_file_status_queued').text(Dida.t('editor', '已取消'));
 	  $(d + ' .dida_swfupload_file_op_queued').html(Dida.swfupload.getDel(d));
 	  Dida.swfupload.setCount(self);
 	}
@@ -79,14 +84,14 @@ Dida.swfupload = {endFile: {}, stopUpload: {}, loaded: {}};
 	  	if (!s.not_filebody) {
 	  		html += '<th>' + Dida.t('editor', '文件描述') + '</th>';
 	  	}
-	  	if (!s.not_filetype) {
-	  		html += '<th width="60">' + Dida.t('editor', '文件类型') + '</th>';
-	  	}
+	  	//if (!s.not_filetype) {
+	  	//	html += '<th width="40">' + Dida.t('editor', '类型') + '</th>';
+	  	//}
 	  	if (!s.not_filesize) {
-	  		html += '<th width="60">' + Dida.t('editor', '文件大小') + '</th>';
+	  		html += '<th width="60">' + Dida.t('editor', '大小') + '</th>';
 	  	}
 	  	if (!s.not_status) {
-	  		html += '<th width="120">' + Dida.t('editor', '状态') + '</th>';
+	  		html += '<th width="100">' + Dida.t('editor', '状态') + '</th>';
 	  	}
 	  	if (!s.not_op) {
 	  		html += '<th width="60">' + Dida.t('editor', '操作') + '</th>';
@@ -147,9 +152,9 @@ Dida.swfupload = {endFile: {}, stopUpload: {}, loaded: {}};
       html += '<textarea name="filebody_' + file.id + '" id="filebody_' + file.id + '"></textarea>';
       html += '</td>';
 	  }
-	  if (!s.not_filetype) {
-	  	html += '<td class="dida_swfupload_file_type dida_swfupload_file_type_queued">' + file.type + '</td>';
-	  }
+	  //if (!s.not_filetype) {
+	  //	html += '<td class="dida_swfupload_file_type dida_swfupload_file_type_queued">' + file.type + '</td>';
+	  //}
     
     if (!s.not_filesize) {
       html += '<td class="dida_swfupload_file_size dida_swfupload_file_size_queued">' + (file.size ? (file.size/1024/1024).toFixed(2) : 0)+' M</td>';
@@ -194,9 +199,9 @@ Dida.swfupload = {endFile: {}, stopUpload: {}, loaded: {}};
 	    	html += '<td class="dida_swfupload_file_body swfupload_file_body_queued"></td>';
 	    }
 
-	    if (!s.not_filetype) {
-	    	html += '<td class="dida_swfupload_file_type dida_swfupload_file_type_queued">' + file.type + '</td>';
-	    }
+	   // if (!s.not_filetype) {
+	   // 	html += '<td class="dida_swfupload_file_type dida_swfupload_file_type_queued">' + file.type + '</td>';
+	   // }
 	    
 	    if (!s.not_filesize) {
 		    html += '<td class="dida_swfupload_file_size dida_swfupload_file_size_queued">' + (file.size ? (file.size/1024/1024).toFixed(2) : 0)+' M</td>';
@@ -276,13 +281,30 @@ Dida.swfupload = {endFile: {}, stopUpload: {}, loaded: {}};
 
 	// 上传成功
 	Dida.swfupload.uploadSuccess = function(file, data) {
+    Dida.swfupload.uploaded[file.id] = data; // 保存服务端返回的数据
 		var d = '#' + file.id;
 	  $(d + ' .dida_swfupload_file_status_queued').text(Dida.t('editor', '上传成功'));
-	  $(d + ' .dida_swfupload_file_op_queued').html(Dida.swfupload.getDel(d));
+
+    var html = Dida.swfupload.getDel(d);
+
+    /**
+     * 如果设置了插入回调函数，则生成一个链接，通过该链接 onClick 事件回调函数
+     * 传递 file.id 参数，可通过该参数，获取对应的文件数据，例如：
+     *  function test(id) { console.log(Dida.swfupload.uploaded[id]); }
+     */
+  	if (this.customSettings.dida_insertCall) {
+		  html += ' | <a href="javascript: void(0);" onClick="' + this.customSettings.dida_insertCall
+      html += '(this, \'' + file.id + '\')" class="dida_swfupload_file_insert">' + Dida.t('ediot', '插入') + '</a>';
+    }
+
+	  $(d + ' .dida_swfupload_file_op_queued').html(html);
+
 	  $(d).removeClass('dida_swfupload_uploading').addClass('dida_swfupload_upload_ok');
 	  Dida.swfupload.setCount(this);
-  	if (this.customSettings.dida_swfuploadccessCall && this.customSettings.dida_swfuploadccessCall != 'undefined') {
-  		Dida.callFunc(this.customSettings.dida_swfuploadccessCall, file, data);
+
+    // 如果设置了回调函数
+  	if (this.customSettings.dida_successCall && this.customSettings.dida_successCall != 'undefined') {
+  		Dida.callFunc(this.customSettings.dida_successCall, file, data);
   	}
 	}
 

@@ -16,9 +16,25 @@ function editor_menu() {
     'file' => 'editor.page.inc',
   );
 
+  $items['editor/view/%'] = array(
+    'load_functions' => array(2 => '%'),
+    'access_callback' => true,
+    'page_callback' => 'editor_page_files',
+    'page_arguments' => array(2),
+    'file' => 'editor.page.inc',
+  );
+
   $items['editor/swfupload'] = array(
+    'description' => 'swfupload 上传处理',
     'access_arguments' => array('file upload'),
     'page_callback' => 'editor_page_swfupload',
+    'file' => 'editor.page.inc',
+  );
+
+  $items['editor/swfupload/html'] = array(
+    'description' => 'swfupload 上传表单，可用于 iframe',
+    'access_arguments' => array('file upload'),
+    'page_callback' => 'editor_swfupload_html',
     'file' => 'editor.page.inc',
   );
 
@@ -55,6 +71,15 @@ function editor_editor_info() {
        * 该设置管理员可在后台更改
        */
       'path' => 'admin/front',
+      
+      // 需要加载的插件，不同编辑器插件名称可能不同，多个以 , 号分隔
+      // 将提供常用编辑的以下几种插件，swfupload smiley insertcode autosave bodybreak 
+      'plugins' => 'swfupload,smiley,insertcode', // 需要加载的插件，不同编辑器插件名称可能不同，多个以 , 号分隔
+
+      // 设置 swfupload，详细参数见 editor_get_swfupload() 
+      'swfupload' => array(
+        'file_types' => '*.png;*.jpg;*.gif'
+      ),
 
       //'access' => array( // 权限设置，留空则所有可使用，管理员可在后台更改
       //  'rids' => array(), // 允许使用该编辑器的角色组 id
@@ -79,15 +104,19 @@ function editor_editor_info() {
        * array(
        *  '#disabled_upload' => false, // true：禁止从编辑器上传，默认 false：允许。
        *  '#disabled_view' => false, // true：禁止在编辑器中浏览已上传文件，默认 false：允许。
-       *  '#view_url' => '', // 在编辑器中浏览本地文件以便插入，若留空，则使用默认：editor/view。除非有特别需求，建议留空
+       *
+       *  '#upload_image_url' => '', // 处理图片上传文件的路径，若留空，则使用默认： editor/upload。除非有特别需求，建议留空
+       *  '#upload_file_url' => '', // 处理上传文件的路径，若留空，则使用默认： editor/upload。除非有特别需求，建议留空
+       *
+       *  '#view_image_url' => '', // 在编辑器中浏览本地图片文件以便插入，若留空，则使用默认：editor/view。除非有特别需求，建议留空
+       *  '#view_file_url' => '', // 在编辑器中浏览本地所有文件以便插入，若留空，则使用默认：editor/view。除非有特别需求，建议留空
        *
        *  // 浏览本地文件时的过滤条件，有时候可能并不需要将所有已上传文件展示，可在此设置过滤条件，条件必须是 files 表中的字段
        *  '#view_args' => array(
        *    'ext_type' => '',
        *    'ext_id' => 1,
+       *    'uid' => 1, // 若为 1，则表示只能浏览自己上传的文件，默认为 1，若为 -1，则表示可以浏览所有文件
        *  ),
-       *
-       *  '#upload_url' => '', // 处理上传文件的路径，若留空，则使用默认： editor/upload。除非有特别需求，建议留空
        *
        *  // 用于验证和保存上传文件参数，如设置了 #upload_url 参数，则以下设置无效。以下设置均为可选
        *  '#validate' => array(
@@ -157,10 +186,12 @@ function editor_editor_load_editor($edit) {
  *    'dom' => '', // textarea 文本域 id，必需
  *    // 其它参数见 editor_editor_info() 中的 data 值
  *  )
+ * @param bool $is_load
+ *  是否立即加载编辑器，默认为 true，否则只初始化，即只执行 init
  * @access public
  * @return void
  */
-function editor_get_editor(array $v) {
+function editor_get_editor(array $v, $is_load = true) {
   if (empty($v['name'])) $v['name'] = var_get('editor_default', 'ckeditor');
 
   $file = DIDA_ROOT . '/' . dd_get_path('module', 'editor') . '/editor/' . $v['name'] . '/include.inc';
@@ -174,33 +205,8 @@ function editor_get_editor(array $v) {
   require_once $file;
   
   static $loaded;
-  
-  if (empty($v['config']['toolbar'])) {
-    $v['config']['toolbar'] = 'full'; // 默认工具栏为 full
-  }
-
-  // 若为数组，则是自定义工具栏，反之则为预设
-  if (!is_array($v['config']['toolbar'])) {
-    $v['config']['toolbar'] = ':::code:::Dida.editor.toolbar.' . $v['name'] . '.full';
-  } 
-
-  if (!empty($v['files'])) {
-    if (!empty($v['files']['#disabled_upload'])) {
-    }
-  }
-
-  $config = array(
-    'upload_image' => url('editor/upload/' . $v['name'], array(
-      'query' => '?type=image&form_token=' . $v['form_token'] . '&instances=' . $v['instances']
-    )),
-    'upload_file' => url('editor/upload/' . $v['name'], array(
-      'query' => '?type=file&form_token=' . $v['form_token'] . '&instances=' . $v['instances']
-    )),
-  );
-
-  $v['config'] = array_merge($config, $v['config']);
-
-  $edit = new $v['name']($v['dom'], $v['config']);
+ 
+  $edit = new $v['name']($v['dom']);
 
   if (!isset($loaded[$v['name']])) {
     $loaded[$v['name']] = 1;
@@ -209,11 +215,72 @@ function editor_get_editor(array $v) {
     $edit->init();
 
     // 加载预设工具栏按钮
-    dd_add_js('Dida.editor.toolbar.' . $v['name'] . ' = ' . dd_to_js($edit->toolbar()) . ';', 'inline_nojq');
+
+    dd_add_js(array('editor' => array('toolbar' => array($v['name'] => $edit->toolbar()))), 'setting');
   }
 
+  if (empty($is_load)) return true;
+
+  $map = $edit->map();
+ 
+  if (empty($v['config'])) $v['config'] = array();
+
+  if (empty($v['config']['toolbar'])) {
+    $v['config']['toolbar'] = 'full'; // 默认工具栏为 full
+  }
+
+  // 若为数组，则是自定义工具栏，反之则为预设
+  if (!is_array($v['config']['toolbar'])) {
+    $v['config']['toolbar'] = ':::code:::Dida.settings.editor.toolbar.' . $v['name'] . '.full';
+  } 
+
+  $config = array();
+
+  if (!empty($v['files'])) {
+    if (empty($v['files']['#disabled_upload'])) {
+      // 默认图片上传地址
+      if (empty($v['files']['#upload_image_url'])) {
+        $v['config'][$map['upload_image_url']] = url('editor/upload/' . $v['name'], array(
+          'query' => 'type=image&form_token=' . $v['form_token'] . '&instances=' . $v['instances'] . '&name=' . $map['upload_image_name']
+        ));
+      } else {
+        $v['config'][$map['upload_image_url']] = $v['files']['#upload_image_url'];
+      }
+      // 默认文件上传地址
+      if (empty($v['files']['#upload_file_url'])) {
+        $v['config'][$map['upload_file_url']] = url('editor/upload/' . $v['name'], array(
+          'query' => 'type=file&form_token=' . $v['form_token'] . '&instances=' . $v['instances'] . '&name=' . $map['upload_image_name']
+        ));
+      } else {
+        $v['config'][$map['upload_file_url']] = $v['files']['#upload_file_url'];
+      }
+    }
+
+    if (empty($v['files']['#disabled_view'])) {
+
+      // 默认图片管理器
+      if (empty($v['files']['#view_image_url'])) {
+        $v['config'][$map['view_image_url']] = url('editor/view/' . $v['name'], array(
+          'query' => 'type=image&form_token=' . $v['form_token'] . '&instances=' . $v['instances']
+        ));
+      } else {
+        $v['config'][$map['view_image_url']] = $v['files']['#view_image_url'];
+      }
+      // 默认文件管理器
+      if (empty($v['files']['#view_file_url'])) {
+        $v['config'][$map['view_file_url']] = url('editor/view/' . $v['name'], array(
+          'query' => 'type=file&form_token=' . $v['form_token'] . '&instances=' . $v['instances']
+        ));     
+      } else {
+        $v['config'][$map['view_file_url']] = $v['files']['#view_file_url'];
+      }
+    }
+  }
+
+  $v['config'] = array_merge($config, $v['config']);
+
   // 加载编辑器
-  $edit->load();
+  $edit->load($v);
 
 }
 // }}}
@@ -227,29 +294,86 @@ Class EDITOR {
 
   public $dom; // 应用编辑器的 textarea id
 
-  public $config; // 编辑器配置参数
-
-  public function __construct($dom, $config) {
+  public function __construct($dom) {
     $this->dom = $dom;
-    $this->config = $config;
     $this->path = dd_get_path('module', 'editor');
   }
 
   // 初始化，通常载入公用 js、css 等
   public function init() {}
     
-  // 加载编辑器
-  public function load() {}
+  // public load($data) {{{ 
+  /**
+   * load
+   * 加载编辑器
+   * @param array $data 
+   *  编辑器设置，其中 $data['config'] 为必须，该参数等同于编辑器 config.js 中的配置
+   * @access public
+   * @return void
+   */
+  public function load(array $data) {
+  }
+  // }}}
 
   // 文件上传处理
-  public function upload($file, $validate) {}
+  public function upload($filename, $validate) {}
 
-  // 文件管理
-  public function files() {}
+  // public files($type) {{{ 
+  /**
+   * files
+   * 文件管理，通常用于浏览已上传的文件，通过编辑器将文件插入编辑框
+   * @param object $fetch
+   *  数据库结果集，包含匹配的所有文件
+   * @param string $type 
+   *  编辑器应用类型，通常分为三种：image - 表示图片，link - 表示任意文件，flash - 表示 flash，video - 表示任意视频
+   * @static
+   * @access public
+   * @return string
+   */
+  static function files($fetch, $type) {
+    $output = '';
+    return $output;
+  }
+  // }}}
+
+  // public swfupload($type, $v = NULL) {{{ 
+  /**
+   * swfupload
+   * 如编辑器需要在 iframe 使用 editor 模块提供的 swfupload 上传，需要实现这个方法
+   * @param string $type 
+   *  类型，目前仅有：settings，即 swfupload 设置
+   * @param array $v 
+   *  设置参数
+   * @access public
+   * @return void|array
+   */
+  static function swfupload($type, $v = NULL) {
+    return;
+  }
+  // }}}
 
   // 定义编辑器按钮栏，各编辑器必需预设四种工具栏
   static function toolbar() {
     return array('full' => array(), 'medium' => array(), 'small' => array(), 'mini' => array());
+  }
+
+  // 将 editor 模块定义的参数映射到编辑器配置
+  static function map() {
+    // 以下为 ckeditor 的示例
+    return array(
+      // 服务器文件浏览地址
+      'view_file_url' => 'filebrowserBrowseUrl',
+      // 服务器图片文件浏览地址
+      'view_image_url' => 'filebrowserImageBrowseUrl',
+      // 文件上传地址
+      'upload_file_url' => 'filebrowserUploadUrl',
+      // 文件上传时 name 值
+      'upload_file_name' => 'upload',
+      // 图片上传地址
+      'upload_image_url' => 'filebrowserImageUploadUrl',
+      // 图片上传时 name 值
+      'upload_image_name' => 'upload',
+    );
   }
 }
 
@@ -286,18 +410,6 @@ function editor_exit() {
  * @return array
  */
 function editor_get_instances($name = NULL) {
-     // 将所有模块定义的实例写入数据库
-    editor_set_data();
-
-    if ($fetch = db_query('SELECT type, data FROM {editor} WHERE status = 1')) {
-      foreach ($fetch as $o) {
-        $o->data = unserialize($o->data);
-        if (empty($o->data['dom'])) continue;
-        $o->data['instances'] = $o->type; // 实例系统名称
-        $data[$o->type] = $o->data;
-      }
-    }
-return $name ? $data[$name] : $data; 
   if (!$data = var_get('editor_instances')) {
     // 将所有模块定义的实例写入数据库
     editor_set_data();
@@ -335,6 +447,7 @@ function editor_set_data() {
   }
   
   $data = module_invoke_all('editor_info');
+
   foreach ($data as $type => $editor) {
     // 若不存在才写入
     if (empty($datas[$type])) {
@@ -426,7 +539,13 @@ function editor_get_swfupload($v = array(), $dom = '', $html = 1) {
 	);
 	
   if (!empty($v['swfupload'])) {
-    $args = array_merge($args, $v['swfupload']);
+    foreach ($v['swfupload'] as $key => $value) {
+      if (!is_array($value)) {
+        $args[$key] = $value;
+      } else {
+        $args[$key] = array_merge($args[$key], $value);
+      }
+    }
   }
   
   dd_add_css($path . '/swfupload/swfupload.css');
@@ -466,5 +585,4 @@ function editor_get_swfupload($v = array(), $dom = '', $html = 1) {
 
   return $output;
 }
-
 
