@@ -1,7 +1,6 @@
 // $Id$
 
 CKEDITOR.plugins.add('swfupload',{
-  requires: ['iframedialog'],
   init: function(edit) {
     edit.addCommand('swfupload', new CKEDITOR.dialogCommand('swfupload'));
     edit.ui.addButton( 'swfupload',{
@@ -9,7 +8,7 @@ CKEDITOR.plugins.add('swfupload',{
       command : 'swfupload',
       icon : this.path + 'swfupload.gif'
     });
-     
+
     CKEDITOR.dialog.add('swfupload', function(edit) {
       var v = edit.config.swfupload_config;
       return {
@@ -21,14 +20,15 @@ CKEDITOR.plugins.add('swfupload',{
           label: '',
           expand: true,
           elements: [{
-            type: 'iframe',
-            src: v.url,
-            style: 'width:100%;height:100%;padding:0;margin:0;',
+            type: 'html',
+            html: '<iframe width="100%" height="100%" src="' + v.url + '" class="cke_dialog_ui_iframe" frameborder="0"></iframe>',
+            style: 'width:100%;min-height:350px;padding:0;margin:0;',
           }]
         }],
         buttons: {disabled: true}
       }
     });   
+       
   }
 });
 

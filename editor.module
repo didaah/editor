@@ -31,6 +31,15 @@ function editor_menu() {
     'file' => 'editor.page.inc',
   );
 
+  $items['editor/custom/%'] = array(
+    'description' => '编辑器自定义页面',
+    'access_callback' => true,
+    'load_functions' => array(2 => '%'),
+    'page_callback' => 'editor_page_custom',
+    'page_arguments' => array(2),
+    'file' => 'editor.page.inc',
+  );
+
   $items['editor/swfupload/html'] = array(
     'description' => 'swfupload 上传表单，可用于 iframe',
     'access_arguments' => array('file upload'),
@@ -192,7 +201,7 @@ function editor_editor_load_editor($edit) {
  * @return void
  */
 function editor_get_editor(array $v, $is_load = true) {
-  if (empty($v['name'])) $v['name'] = var_get('editor_default', 'ckeditor');
+  if (empty($v['name'])) $v['name'] = var_get('editor_default', 'ueditor');
 
   $file = DIDA_ROOT . '/' . dd_get_path('module', 'editor') . '/editor/' . $v['name'] . '/include.inc';
 

@@ -191,3 +191,34 @@ function editor_editor_swfupload_html($type, $name = NULL, $v = NULL) {
     break;
   }
 }
+
+// public editor_page_custom($name) {{{ 
+/**
+ * editor_page_custom
+ * 有时候可能编辑器需要一些页面，用于iframe或其它。只需要在 include.inc 中定义以 custom_ 开头的方法即可
+ * 例如：ckeditor 定义了方法 ::custom_test()，通过 editor/custom/ckeditor?name=test&instances 即能访问
+ * 注意：instances 是必须的，便于判断是在哪一个编辑器实例中调用
+ * 
+ * @param string $name
+ * @access public
+ * @return void
+ */
+function editor_page_custom($name) {
+  if (empty($_GET['instances']) || !$config = editor_get_instances($_GET['instances'])) exit;
+  
+  if (empty($_GET['name'])) exit;
+
+  $file = DIDA_ROOT . '/' . dd_get_path('module', 'editor') . '/editor/' . $name . '/include.inc';
+
+  // 指定的编辑器不存在
+  if (!is_file($file)) exit;
+
+  require_once $file;
+  
+  $func = 'custom_' . $_GET['name'];
+  
+  if (method_exists($name, $func)) return $name::$func($_GET, $_POST);
+
+  dd_get_not();
+}
+// }}}

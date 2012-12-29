@@ -8,12 +8,12 @@
 /**
  * 编辑器接口
  */
-Class ckeditor extends EDITOR {
+Class ckeditor4 extends EDITOR {
   
    // 初始化，通常载入公用 js、css 等
   public function init() {
-		dd_add_js($this->path . '/editor/ckeditor/ckeditor.js');
-		dd_add_js($this->path . '/editor/ckeditor/include.js');
+		dd_add_js($this->path . '/editor/ckeditor4/ckeditor.js');
+		dd_add_js($this->path . '/editor/ckeditor4/include.js');
 		dd_add_js('function updateTextArea(dom){ CKEDITOR.instances[dom].updateElement(); };', 'inline_nojq', 0, 'footer');
   }
     
@@ -112,21 +112,21 @@ Class ckeditor extends EDITOR {
       array(
         'Source','-','AutoSave','Maximize','Preview', 'Print', '-',
         'Templates','Cut','Copy','Paste','PasteText', 'PasteFromWord','-',
-        'Undo','Redo','-',
-        'SelectAll','RemoveFormat','Form','Checkbox','Radio','TextField',
-        'Textarea','Select','Button','ImageButton','HiddenField', 'insertcode'
+        'Undo','Redo','-', 'SelectAll','RemoveFormat',
+        'Bold','Italic','Underline','Strike','-',
       ),
       '/',
       array(
-        'Bold','Italic','Underline','Strike','-',
-        'Subscript','Superscript','NumberedList','BulletedList','-',
-        'Outdent','Indent','Blockquote','JustifyLeft','JustifyCenter','JustifyRight',
-        'JustifyBlock','Link','Unlink','Anchor','Image','Flash','Table', 'HorizontalRule',
-        'Smiley','SpecialChar','PageBreak'),
+        'Styles','Format','Font','FontSize','TextColor',
+        'BGColor','ShowBlocks','-', 'Find','Replace',// 'insertcode' // @TODO
+      ),
       '/',
       array(
-        'Styles','Format','Font','FontSize','TextColor',
-        'BGColor','ShowBlocks','-', 'swfupload', 'Find','Replace', 'about'
+        'JustifyBlock','Link','Unlink','Anchor','Image','swfupload','Flash','Table', 'HorizontalRule',
+        'Smiley','SpecialChar','PageBreak', '-',
+        'Form','Checkbox','Radio','TextField',
+        'Textarea','Select','Button','ImageButton','HiddenField',
+        '-', 'about'
       )
     );
     
