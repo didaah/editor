@@ -82,7 +82,7 @@ function editor_editor_info() {
       'path' => 'admin/front',
       
       // 需要加载的插件，不同编辑器插件名称可能不同，多个以 , 号分隔
-      // 将提供常用编辑的以下几种插件，swfupload smiley insertcode autosave bodybreak 
+      // 将提供常用编辑器的以下几种插件，swfupload smiley insertcode autosave bodybreak 
       'plugins' => 'swfupload,smiley,insertcode', // 需要加载的插件，不同编辑器插件名称可能不同，多个以 , 号分隔
 
       // 设置 swfupload，详细参数见 editor_get_swfupload() 
@@ -178,13 +178,6 @@ function editor_editor_info() {
   return $editor;
 }
 
-/**
- * @Implement of hook_editor_is_editor()
- */
-function editor_editor_load_editor($edit) {
-
-}
-
 // public editor_get_editor(array $v) {{{ 
 /**
  * editor_get_editor
@@ -201,7 +194,7 @@ function editor_editor_load_editor($edit) {
  * @return void
  */
 function editor_get_editor(array $v, $is_load = true) {
-  if (empty($v['name'])) $v['name'] = var_get('editor_default', 'ueditor');
+  if (empty($v['name'])) $v['name'] = var_get('editor_default', 'markitup');
 
   $file = DIDA_ROOT . '/' . dd_get_path('module', 'editor') . '/editor/' . $v['name'] . '/include.inc';
 
@@ -595,3 +588,92 @@ function editor_get_swfupload($v = array(), $dom = '', $html = 1) {
   return $output;
 }
 
+/**
+ * 代码高亮
+ */
+function editor_get_highlighter() {
+  static $loaded;
+
+  if (!isset($loaded)) {
+    $path = dd_get_path('module', 'editor') . '/syntaxhighlighter/';
+    dd_add_css($path . 'sh.css');
+    dd_add_js($path . 'sh.js');
+    dd_add_js('SyntaxHighlighter.defaults["toolbar"] = false;SyntaxHighlighter.all();', 'inline_nojq');
+  }
+
+  $loaded = 1;
+}
+
+/**
+ * 代码高亮
+ * @param (array) $mat
+ */
+function _editor_filter_code_higth($mat) {
+  if ($mat[2]) {
+    $output = '<pre class="brush: ' . $mat[1] . ';">';
+    $output .= str_replace(array('<br class="system_filter"/>', '<', '>'), array("\n", '&lt;', '&gt;'), $mat[2]);
+    $output .= '</pre>';
+  } else {
+    $output = $mat[0];
+  }
+  
+  return $output;
+}
+
+/**
+ * <br class="system_filter"/> 转为 \n
+ * @param (array) $mat
+ */
+function _editor_filter_code_pre_higth($mat) {
+  $output = '<pre class="brush' . $mat[1] . '>';
+  $output .= str_replace(array('<br class="system_filter"/>', '<', '>'), array("\n", '&lt;', '&gt;'), $mat[2]);
+  $output .= '</pre>';
+  return $output;
+}
+
+/**
+ * @Implement of hook_filter()
+ */
+function editor_filter($op, $delta = NULL, $format = NULL, $value = NULL, $filter_id = NULL, $node_type = NULL, $node_nid = NULL) {
+  switch ($op) {
+    case 'view':
+      switch ($delta) {
+        case 'highlighter': // 代码高亮
+          if (strpos($value, '[code=') === false) {
+            /**
+             * 直接通过 <pre> 标签添加的高亮代码
+             * 将换行符过滤器转换为 \n
+             */
+            if (strpos($value, '<pre class="brush') !== false) {
+              $value = preg_replace_callback('/<pre class="brush(.*?)>(.*?)<\/pre>/ims', '_editor_filter_code_pre_higth', $value);
+              dd_get_highlighter();
+            }
+            return $value;
+          }
+
+          editor_get_highlighter();
+          $value = preg_replace_callback('/\[code=([^\/]*?)\](.*?)\[\/code\]/ims', '_editor_filter_code_higth', $value);
+        break;
+
+        case 'smiley': // 表情转换
+          $path = f(dd_get_path('module', 'editor') . '/editor/editor/markitup/sets/dida/face/');
+          $value = preg_replace('/\[smiley\](.*?)\[\/smiley\]/ims', "<img src='$path\${1}' />", $value);
+        break;
+      }
+    return $value;
+    
+    case 'list':
+    // 注册过滤器列表
+    return array(
+      'highlighter' => array(
+        'title' => '代码高亮',
+        'weight' => 10,
+        'description' => '将 [code={type}][/code] 之间的代码做高亮处理，权重应低于换行符转换。若 HTML 过滤器同时启用，且设置为去除标签，代码高亮权重应高于 HTML 过滤器，同时过滤器中允许 pre 标签',
+      ),
+      'smiley' => array(
+        'title' => '表情解析',
+        'description' => '将 [smiley][/smiley] 转换为表情图片',
+      ),
+    );
+  }
+}
