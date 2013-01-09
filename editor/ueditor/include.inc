@@ -13,7 +13,18 @@
  * 编辑器接口
  */
 Class ueditor extends EDITOR {
-  
+ 
+  /**
+   * 编辑器基本信息
+   */
+  static function info() {
+    return array(
+      'name' => t('editor', '百度编辑器'), // 必须
+      'description' => t('editor', 'UEditor是由百度web前端研发部开发所见即所得富文本web编辑器'),
+      'link' => 'http://ueditor.baidu.com/website/'
+    );
+  }
+ 
    // 初始化，通常载入公用 js、css 等
   public function init() {
 		dd_add_js($this->path . '/editor/ueditor/editor_all.js');

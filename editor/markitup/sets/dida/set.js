@@ -302,7 +302,7 @@ Dida.markItUp.tools.insertFilepath = function(obj, edit, op) {
 		}
 		
 		if ($('#markitup_file_form_field_link').val()) {
-			Dida.markItUp.tools.insert('<a '+target+' href="'+$('#markitup_file_form_field_link').val()+'">' + image + '</a>', edit);
+			Dida.markItUp.tools.insert('<a'+target+' href="'+$('#markitup_file_form_field_link').val()+'">' + image + '</a>', edit);
 			$('#markitup_file_form_field_link').val("");
 		} else {
 			Dida.markItUp.tools.insert(image, edit);

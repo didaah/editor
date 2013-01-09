@@ -9,7 +9,15 @@
  * 编辑器接口
  */
 Class ckeditor4 extends EDITOR {
-  
+
+  // 定义编辑器基本信息
+  static function info() {
+    return array(
+      'name' => t('editor', 'CKEditor4'),
+      'description' => 'ckeditor 4.x',
+    );
+  }
+   
    // 初始化，通常载入公用 js、css 等
   public function init() {
 		dd_add_js($this->path . '/editor/ckeditor4/ckeditor.js');

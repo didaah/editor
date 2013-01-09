@@ -47,7 +47,61 @@ function editor_menu() {
     'file' => 'editor.page.inc',
   );
 
+  $items['admin/editor'] = array(
+    'title' => '编辑器配置列表',
+    'access_arguments' => array('admin editor settings'),
+    'page_callback' => 'editor_admin_list',
+    'file' => 'editor.admin.inc',
+  );
+
+  $items['admin/editor/settings'] = array(
+    'title' => '编辑器全局设置',
+    'access_arguments' => array('admin editor settings'),
+    'page_callback' => 'dd_get_form',
+    'page_arguments' => array('editor_admin_settings'),
+    'file' => 'editor.admin.inc',
+  );
+
+  $items['admin/editor/add'] = array(
+    'title' => '添加编辑器配置',
+    'access_arguments' => array('admin editor create'),
+    'page_callback' => 'dd_get_form',
+    'page_arguments' => array('editor_admin_form'),
+    'file' => 'editor.admin.inc',
+  );
+
+  $items['admin/editor/edit/%'] = array(
+    'title' => '修改编辑器配置',
+    'load_functions' => array(3 => '%'),
+    'access_arguments' => array('admin editor update'),
+    'page_callback' => 'dd_get_form',
+    'page_arguments' => array('editor_admin_form', 3),
+    'file' => 'editor.admin.inc',
+  );
+
   return $items;
+}
+
+/**
+ * @Implement of hook_prem()
+ */
+function editor_prem() {
+  return array(
+    'admin editor settings' => '浏览编辑器配置',
+    'admin editor create' => '添加编辑器配置',
+    'admin editor update' => '修改编辑器配置',
+  );
+}
+
+/**
+ * @Implement of hook_system_admin_menus()
+ */
+function editor_system_admin_menus() {
+  return array(array(
+    array(t('editor', '配置列表'), 'admin/editor'),
+    array(t('editor', '全局设置'), 'admin/editor/settings'),
+    array(t('editor', '添加编辑器配置'), 'admin/editor/add'),
+  ), t('editor', '编辑器'));
 }
 
 /**
@@ -72,7 +126,7 @@ function editor_editor_info() {
      */
     'data' => array(
       // 'name' => 'ckeditor', // 指定编辑器，如：ckeditor、ueditor。通常不需要指定，由管理员自行设置
-      'dom' => 'system_admin_front_type_value', // 作用的文本域 id，如：#body、#mytextarea 等，必须
+      'dom' => 'system_admin_front_type_value', // 作用的文本域 id，如：body、mytextarea 等，必须
       /**
        * 允许加载编辑器的页面。留空则将在所有页面寻找匹配的 dom 元素。
        * 必须是系统路径，如：admin user/login user/center 等，多个路径以 ; 号分隔
@@ -168,7 +222,7 @@ function editor_editor_info() {
       'config' => array(
         /**
          * 编辑器工具栏，各编辑器均预设四种类型：full、medium、small、mini。
-         * 也可传递数组，自行设置，如：array('Blod', 'Copy')，各编辑器按钮名称可能各异
+         * 也可传递 js 数组，自行设置，如："['Blod', 'Copy']"，各编辑器按钮名称可能各异
          */
         'toolbar' => 'full', // 编辑器工具栏，各编辑器均预设四种类型：full、medium、small、mini。也可传递数组，自行设置，如：array()
       ),
@@ -233,7 +287,11 @@ function editor_get_editor(array $v, $is_load = true) {
 
   // 若为数组，则是自定义工具栏，反之则为预设
   if (!is_array($v['config']['toolbar'])) {
-    $v['config']['toolbar'] = ':::code:::Dida.settings.editor.toolbar.' . $v['name'] . '.full';
+    if (in_array($v['config']['toolbar'], array('full', 'medium', 'small', 'mini'))) {
+      $v['config']['toolbar'] = ':::code:::Dida.settings.editor.toolbar.' . $v['name'] . '.' . $v['config']['toolbar'];
+    } else {
+      $v['config']['toolbar'] = ':::code:::' . $v['config']['toolbar'];
+    }
   } 
 
   $config = array();
@@ -288,6 +346,24 @@ function editor_get_editor(array $v, $is_load = true) {
 // }}}
 
 /**
+ * 获取所有编辑器基本信息
+ * @return array
+ */
+function editor_get_info() {
+  if ($data = glob(DIDA_ROOT . '/' . dd_get_path('module', 'editor') . '/editor/*')) {
+    $info = array();
+    foreach ($data as $path) {
+      if (is_dir($path) && is_file($path . '/include.inc')) {
+        include_once $path . '/include.inc';
+        $class = basename($path);
+        if (method_exists($class, 'info')) $info[$class] = $class::info();
+      }
+    }
+    return $info;
+  }
+}
+
+/**
  * 编辑器接口
  */
 Class EDITOR {
@@ -299,6 +375,18 @@ Class EDITOR {
   public function __construct($dom) {
     $this->dom = $dom;
     $this->path = dd_get_path('module', 'editor');
+  }
+
+  /**
+   * 编辑器基本信息
+   * @return array
+   */
+  static function info() {
+    return array(
+      'name' => t('editor', '百度编辑器'), // 必须
+      'description' => t('editor', 'UEditor是由百度web前端研发部开发所见即所得富文本web编辑器'),
+      'link' => 'http://ueditor.baidu.com/website/'
+    );
   }
 
   // 初始化，通常载入公用 js、css 等
@@ -380,16 +468,33 @@ Class EDITOR {
 }
 
 /**
+ * @Implement of hook_init()
+ */
+function editor_init() {
+  global $editor_disabled;
+
+  /**
+   * array $editor_disabled
+   * 禁用实例列表，当编辑器无法通过路径判断是否禁用时，通常使用此方法，将需要禁用的实例加入数组，以实例名为键名，如：
+   *  $editor_disabled['comment'] = true;
+   * 禁用实例名为 comment 的编辑器。
+   */
+}
+
+/**
  * @Implement of hook_exit()
  */
 function editor_exit() {
-  global $form_tokens;
+  global $form_tokens, $editor_disabled;
   
   if (!$editor = editor_get_instances()) return;
-
+  
   dd_add_js(dd_get_path('module', 'editor') . '/editor.js');
 
   foreach ($editor as $type => $v) {
+    // 已禁用该实例
+    if (!empty($editor_disabled[$type])) continue;
+
     // 如指定了 form_id，但却没有 form_token 值，跳过
     if (!empty($v['form_id']) && empty($form_tokens[$v['form_id']])) continue;
 
@@ -413,6 +518,7 @@ function editor_exit() {
  */
 function editor_get_instances($name = NULL) {
   if (!$data = var_get('editor_instances')) {
+
     // 将所有模块定义的实例写入数据库
     editor_set_data();
 
@@ -427,9 +533,18 @@ function editor_get_instances($name = NULL) {
     var_set('editor_instances', $data);
   }
 
-  return $data;
+  return $name ? $data[$name] : $data;
 }
 // }}}
+
+/**
+ * @Implement of hook_system_cache_clear()
+ */
+function editor_system_cache_clear($op, $value = NULL) {
+  if ($op == 'submit' && !empty($value['value']['cache_hook'])) {
+    var_del('editor_instances', 0);
+  }
+}
 
 // public editor_set_data() {{{ 
 /**
@@ -451,18 +566,22 @@ function editor_set_data() {
   $data = module_invoke_all('editor_info');
 
   foreach ($data as $type => $editor) {
-    // 若不存在才写入
-    if (empty($datas[$type])) {
-      $editor['type'] = $type;
-      $editor['created'] = time();
-      db_write_record('editor', $editor);
+    $editor['deleted'] = 0; // 不允许删除通过 hook_editor_info() 添加的编辑器实例
+    // 若已存在，则不写入配置数据，避免将管理员自定义的数据覆盖，可通过管理后台恢复默认值来实现重置
+    if (!empty($datas[$type])) {
+      unset($editor['data']); 
+      $args = array('type');
+    } else {
+      $args = NULL;
     }
+
+    $editor['type'] = $type;
+    $editor['created'] = time();
+    db_write_record('editor', $editor, $args);
   }
 
 }
 // }}}
-
-/**编辑器常用功能**/
 
 /**
  * 获取 swfupload 批量上传所需的 js、html 等内容

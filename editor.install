@@ -34,7 +34,7 @@ function editor_schema() {
         'not null' => TRUE,
         'default' => 0,
         'size' => 'tiny',
-        'description' => '删除，0：允许，1、不允许。通过 hook_editor_info() 创建的不允许删除',
+        'description' => '删除，0：不允许，1、允许。通过 hook_editor_info() 创建的不允许删除',
       ),
       'status' => array(
         'type' => 'int',

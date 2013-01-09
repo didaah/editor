@@ -33,7 +33,7 @@ function editor_page_upload($name) {
   if (!empty($_POST['filebody']) && empty($validate['filebody'])) $validate['filebody'] = $_POST['filebody'];
 
   $editor = new $name($config['dom']);  
-
+  
   echo $editor->upload($_GET['name'], $validate);
 
   exit;

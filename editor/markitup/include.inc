@@ -9,7 +9,15 @@
  * 编辑器接口
  */
 Class markitup extends EDITOR {
-  
+ 
+  // 定义编辑器基本信息
+  static function info() {
+    return array(
+      'name' => t('editor', 'markItUp'),
+      'description' => 'markItUp 文本编辑器',
+    );
+  }
+   
    // 初始化，通常载入公用 js、css 等
   public function init() {
     dd_add_js($this->path . '/editor/markitup/include.js');
