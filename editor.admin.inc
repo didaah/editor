@@ -17,6 +17,7 @@ function editor_admin_list() {
 
   if (!empty($_GET['delete'])) {
     if (db_exec('DELETE FROM {editor} WHERE type = ?', array($_GET['type']))) {
+      editor_set_data();
       var_del('editor_instances');
       echo 'reload';
     }

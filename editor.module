@@ -564,7 +564,7 @@ function editor_set_data() {
   }
   
   $data = module_invoke_all('editor_info');
-
+  
   foreach ($data as $type => $editor) {
     $editor['deleted'] = 0; // 不允许删除通过 hook_editor_info() 添加的编辑器实例
     // 若已存在，则不写入配置数据，避免将管理员自定义的数据覆盖，可通过管理后台恢复默认值来实现重置
