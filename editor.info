@@ -2,7 +2,7 @@
 // $Id$
 $info = array(
   'name' => '编辑器接口',
-  'description' => '制定统一的编辑器接入标准，便于使用不多编辑器',
+  'description' => '制定统一的编辑器接入标准，便于使用不同编辑器',
   'ver' => '1.0',
   'language' => 'zh-hans',
 );
