@@ -27,7 +27,7 @@ Class ueditor extends EDITOR {
  
    // 初始化，通常载入公用 js、css 等
   public function init() {
-		dd_add_js($this->path . '/editor/ueditor/editor_all.js');
+		dd_add_js($this->path . '/editor/ueditor/editor_all_min.js');
 		//dd_add_js($this->path . '/editor/ueditor/include.js');
   }
     
