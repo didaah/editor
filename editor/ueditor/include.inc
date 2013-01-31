@@ -69,6 +69,7 @@ Class ueditor extends EDITOR {
       'initialFrameWidth' => '100%', // 默认宽度
       'autoHeightEnabled' => false,
       'scaleEnabled' => true,
+      'initialContent' => '',
       'catchRemoteImageEnable' => false, // 禁用远程图片抓取
       'pageBreakTag' => '_dida_page_break_tag_',
       'UEDITOR_HOME_URL' =>  $GLOBALS['base_path'] . $this->path . '/editor/ueditor/',
