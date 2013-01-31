@@ -111,12 +111,12 @@ Class markitup extends EDITOR {
     );
     
 		$toolbar['small'] = array(
-      'strong', 'u', 'em', 'del', 'ul', 'ol', 'img', 'a', 'blockquote', 'save', 'smiley'
+      'strong', 'u', 'em', 'del', 'ul', 'ol', 'img', 'a', 'blockquote', 'smiley'
 		);
 		
 		$toolbar['medium'] = array(
       'h1', 'h2', 'p', 'strong', 'u', 'em', 'del',
-      'ul', 'ol', 'img', 'a', 'blockquote', 'code', 'clean', 'smiley', 'save', 'perview'
+      'ul', 'ol', 'img', 'a', 'blockquote', 'code', 'clean', 'smiley', 'perview'
 		);
 		
 		$toolbar['mini'] = array(array('string', 'u', 'em', 'del'));
