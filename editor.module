@@ -494,7 +494,7 @@ function editor_exit() {
   foreach ($editor as $type => $v) {
     // 已禁用该实例
     if (!empty($editor_disabled[$type])) continue;
-
+    
     // 如指定了 form_id，但却没有 form_token 值，跳过
     if (!empty($v['form_id']) && empty($form_tokens[$v['form_id']])) continue;
 

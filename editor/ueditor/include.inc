@@ -28,7 +28,6 @@ Class ueditor extends EDITOR {
    // 初始化，通常载入公用 js、css 等
   public function init() {
 		dd_add_js($this->path . '/editor/ueditor/editor_all_min.js');
-		//dd_add_js($this->path . '/editor/ueditor/include.js');
   }
     
   // 加载编辑器
@@ -77,7 +76,8 @@ Class ueditor extends EDITOR {
 
     $config = array_merge($config, $data['config']);
 
-    $js = 'Dida.module.editor.instances.' . $data['instances'] . ' = UE.getEditor(\'' . $this->dom . '\', ' . dd_to_js($config) . ');';
+    $js = 'Dida.module.editor.instances.' . $data['instances'] . ' = UE.getEditor(\'' . $this->dom . '\', ' . dd_to_js($config) . ')';
+    $js .= '.addListener(\'contentChange\', function() { this.sync();})'; // 内容有变化时即执行 sync，避免影响 jquery validate
 
     dd_add_js($js, 'inline_nojq', 0, 'footer');
   }
