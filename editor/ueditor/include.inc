@@ -76,8 +76,20 @@ Class ueditor extends EDITOR {
 
     $config = array_merge($config, $data['config']);
 
-    $js = 'Dida.module.editor.instances.' . $data['instances'] . ' = UE.getEditor(\'' . $this->dom . '\', ' . dd_to_js($config) . ')';
-    $js .= '.addListener(\'contentChange\', function() { this.sync();})'; // 内容有变化时即执行 sync，避免影响 jquery validate
+    $var_name = 'Dida.module.editor.instances.' . $data['instances'];
+    $js = $var_name . ' = UE.getEditor(\'' . $this->dom . '\', ' . dd_to_js($config) . ');';
+    // 内容有变化时即执行 sync，避免影响 jquery validate
+
+    // @TODO 编辑器内容 change 事件有 bug，待查验
+    //$js .= $var_name . '.addListener(\'contentChange\', function() {';
+    //$js .= 'this.sync();';
+    //$js .= 'console.log("变化");';
+    //$js .= 'console.log(this.getContent());';
+    //$js .= '});'; 
+
+    $js .= $var_name . '.ready(function() {';
+    $js .= '$(' . $var_name . '.document).live("keyup paste", function() { ' . $var_name . '.sync();});';
+    $js .= '});';
 
     dd_add_js($js, 'inline_nojq', 0, 'footer');
   }
