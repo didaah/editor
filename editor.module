@@ -570,6 +570,7 @@ function editor_set_data() {
     // 若已存在，则不写入配置数据，避免将管理员自定义的数据覆盖，可通过管理后台恢复默认值来实现重置
     if (!empty($datas[$type])) {
       unset($editor['data']); 
+      unset($editor['status']);
       $args = array('type');
     } else {
       $args = NULL;
