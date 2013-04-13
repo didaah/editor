@@ -471,13 +471,19 @@ Class EDITOR {
  * @Implement of hook_init()
  */
 function editor_init() {
-  global $editor_disabled;
+  global $editor_disabled, $editor_alter_config;
 
   /**
    * array $editor_disabled
    * 禁用实例列表，当编辑器无法通过路径判断是否禁用时，通常使用此方法，将需要禁用的实例加入数组，以实例名为键名，如：
    *  $editor_disabled['comment'] = true;
    * 禁用实例名为 comment 的编辑器。
+   *
+   * array $editor_alter_config
+   * 动态添加实例配置参数(限 data 部分，参见 editor_editor_info())，如：
+   * $editor_alter_config['comment'] = array('name' => 'ckeditor'); // 设置该实例使用 ckeditor 编辑器
+   * 通常应用于一个实例多处使用的场景，如：不同类型的评论表单
+   *
    */
 }
 
@@ -485,7 +491,7 @@ function editor_init() {
  * @Implement of hook_exit()
  */
 function editor_exit() {
-  global $form_tokens, $editor_disabled;
+  global $form_tokens, $editor_disabled, $editor_alter_config;
   
   if (!$editor = editor_get_instances()) return;
   
@@ -494,6 +500,15 @@ function editor_exit() {
   foreach ($editor as $type => $v) {
     // 已禁用该实例
     if (!empty($editor_disabled[$type])) continue;
+    if (!empty($editor_alter_config[$type])) {
+      foreach ($editor_alter_config[$type] as $key => $value) {
+        if (!is_array($value) || empty($v[$key])) {
+          $v[$key] = $value;
+        } else {
+          $v[$key] = array_merge($v[$key], $value);
+        }
+      }
+    }
     
     // 如指定了 form_id，但却没有 form_token 值，跳过
     if (!empty($v['form_id']) && empty($form_tokens[$v['form_id']])) continue;
