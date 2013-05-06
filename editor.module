@@ -791,7 +791,7 @@ function editor_filter($op, $delta = NULL, $format = NULL, $value = NULL, $filte
         break;
 
         case 'smiley': // 表情转换
-          $path = f(dd_get_path('module', 'editor') . '/editor/editor/markitup/sets/dida/face/');
+          $path = f(dd_get_path('module', 'editor') . '/editor/markitup/sets/dida/face/');
           $value = preg_replace('/\[smiley\](.*?)\[\/smiley\]/ims', "<img src='$path\${1}' />", $value);
         break;
       }
