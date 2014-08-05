@@ -248,6 +248,30 @@ function editor_editor_info() {
  * @return void
  */
 function editor_get_editor(array $v, $is_load = true) {
+  global $user;
+
+  if (!empty($v['access'])) {
+    if (!empty($v['access']['uids'])) {
+      $is_true = false;
+      foreach (explode(',', $v['access']['uids']) as $uid) {
+        if (trim($uid) == $user->uid) {
+          $is_true = true;
+        }
+      }
+      if (empty($is_true)) return false;
+    } else if (!empty($v['access']['rids'])) {
+      if (!empty($user->roles)) {
+        $is_true = false;
+        foreach ($v['access']['rids'] as $rid) {
+          if (!empty($user->roles[$rid])) {
+            $is_true = true;
+          }
+        }
+        if (empty($is_true)) return false;       
+      }
+    }
+  }
+
   if (empty($v['name'])) $v['name'] = var_get('editor_default', 'markitup');
 
   $file = DIDA_ROOT . '/' . dd_get_path('module', 'editor') . '/editor/' . $v['name'] . '/include.inc';
@@ -261,7 +285,7 @@ function editor_get_editor(array $v, $is_load = true) {
   require_once $file;
   
   static $loaded;
- 
+
   $edit = new $v['name']($v['dom']);
 
   if (!isset($loaded[$v['name']])) {

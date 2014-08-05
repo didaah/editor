@@ -220,13 +220,11 @@ function editor_admin_form($type = NULL) {
     $form['fields']['data']['swfupload'][$i]['key'] = array(
       '#type' => 'textfield',
       '#title' => t('editor', '参数名'),
-      '#prefix' => '<div class="form_item">',
       '#default_value' => is_numeric($id) ? '' : $id,
     );
     $form['fields']['data']['swfupload'][$i]['value'] = array(
       '#type' => 'textfield',
       '#title' => t('editor', '参数值'),
-      '#suffix' => '</div>',
       '#default_value' => is_numeric($id) ? '' : $value,
     );
     $i++;
@@ -273,13 +271,11 @@ function editor_admin_form($type = NULL) {
       $form['fields']['data']['files'][$i]['key'] = array(
         '#type' => 'textfield',
         '#title' => t('editor', '参数名'),
-        '#prefix' => '<div class="form_item">',
         '#default_value' => $key
       );
       $form['fields']['data']['files'][$i]['value'] = array(
         '#type' => 'textfield',
         '#title' => t('editor', '参数值'),
-        '#suffix' => '</div>',
         '#default_value' => $default,
         '#description' => $value[1]
       );
@@ -289,13 +285,11 @@ function editor_admin_form($type = NULL) {
         $form['fields']['data']['files'][$i]['key'] = array(
           '#type' => 'textfield',
           '#title' => t('editor', '参数名'),
-          '#prefix' => '<div class="form_item">',
           '#default_value' => $_key
         );
         $form['fields']['data']['files'][$i]['value'] = array(
           '#type' => 'textfield',
           '#title' => t('editor', '参数值'),
-          '#suffix' => '</div>',
           '#default_value' => $default,
           '#description' => $_value[1]
         );
@@ -320,18 +314,15 @@ function editor_admin_form($type = NULL) {
   }
 
   $i = 0;
-
   foreach ($editor->data['config'] as $id => $value) {
     $form['fields']['data']['config'][$i]['key'] = array(
       '#type' => 'textfield',
       '#title' => t('editor', '参数名'),
-      '#prefix' => '<div class="form_item">',
       '#default_value' => is_numeric($id) ? '' : $id,
     );
     $form['fields']['data']['config'][$i]['value'] = array(
-      '#type' => 'textfield',
+      '#type' => 'textarea',
       '#title' => t('editor', '参数值'),
-      '#suffix' => '</div>',
       '#default_value' => is_numeric($id) ? '' : $value,
     );
     if ($id === 'toolbar') {
